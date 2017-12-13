@@ -14,6 +14,11 @@ This is currently entirely experimental.
   - holes can be smaller than fill (i.e. inside and outside have different minimum feature size).
 
 ## Possible references
+
+Similar project:
+
+https://github.com/movAX13h/Zwerg
+
 STL Files:
 
 https://github.com/QuantumConcepts/STLdotNET
