@@ -12,3 +12,21 @@ This is currently entirely experimental.
   - different resolutions in X,Y,Z;
   - different minimum feature size in X,Y,Z;
   - holes can be smaller than fill (i.e. inside and outside have different minimum feature size).
+
+## Possible references
+STL Files:
+
+https://github.com/QuantumConcepts/STLdotNET
+http://frankniemeyer.blogspot.co.uk/2014/05/binary-stl-io-using-nativeinteropstream.html
+
+SDF modelling and rendering
+
+https://github.com/gokselgoktas/sdf-ray-marching
+http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+http://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm
+http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
+http://flafla2.github.io/2016/10/01/raymarching.html
+
+Basic language?
+
+https://github.com/i-e-b/DBSS
