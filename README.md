@@ -15,6 +15,10 @@ This is currently entirely experimental.
 
 ## Possible references
 
+Articles:
+
+https://www.codeproject.com/Articles/1167212/OpenGL-with-OpenTK-in-Csharp-Part-Initialize-the-G
+
 Similar project:
 
 https://github.com/movAX13h/Zwerg
