@@ -11,7 +11,9 @@ namespace Tkgl
     {
         private int shaderId;
         private int vertexArrayId;
-        private double cumlTime = 0.0d;
+        private double cumlTime;
+
+        private ScreenBox screenBox;
 
         public MainWindow()
             : base(800, 600,
@@ -37,6 +39,9 @@ namespace Tkgl
             GL.GenVertexArrays(1, out vertexArrayId);
             GL.BindVertexArray(vertexArrayId);
 
+            screenBox = new ScreenBox();
+            screenBox.Bind(shaderId);
+
             Closed += OnClosed;
         }
 
@@ -55,10 +60,19 @@ namespace Tkgl
             GL.AttachShader(program, fragmentShader);
             GL.LinkProgram(program);
 
+            var log = GL.GetShaderInfoLog(vertexShader);
+            log += GL.GetShaderInfoLog(fragmentShader);
+
             GL.DetachShader(program, vertexShader);
             GL.DetachShader(program, fragmentShader);
             GL.DeleteShader(vertexShader);
             GL.DeleteShader(fragmentShader);
+
+            if (! string.IsNullOrWhiteSpace(log)) {
+                GL.DeleteProgram(program);
+                throw new Exception(log);
+            }
+
             return program;
         }
 
@@ -80,9 +94,9 @@ namespace Tkgl
 
             Color4 backColor;
             backColor.A = 1.0f;
-            backColor.R = 0.1f;
-            backColor.G = 0.1f;
-            backColor.B = 0.3f;
+            backColor.R = 1.0f;
+            backColor.G = 0.0f;
+            backColor.B = 1.0f;
             GL.ClearColor(backColor);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
@@ -98,10 +112,11 @@ namespace Tkgl
             position.W = 1.0f;
             GL.VertexAttrib4(1, position);
 
+            //GL.Uniform3(1, Width, Height, 0);
 
             // Draw commands
-            GL.DrawArrays(PrimitiveType.Points, 0, 1);
-            GL.PointSize(10);
+            screenBox.Draw();
+
 
             SwapBuffers();
         }

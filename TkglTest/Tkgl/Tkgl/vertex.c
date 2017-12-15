@@ -7,5 +7,5 @@ out vec4 frag_color;
 void main(void)
 {
     gl_Position = position;
-    frag_color = vec4(sin(time) * 0.5 + 0.5, cos(time) * 0.5 + 0.5, 0.0, 0.0);
+    frag_color = vec4((1 + position.x)/2, (1 + position.y)/2, 0.0, 1.0);
 }
