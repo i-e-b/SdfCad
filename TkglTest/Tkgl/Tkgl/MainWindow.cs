@@ -92,12 +92,7 @@ namespace Tkgl
             base.OnRenderFrame(e);
             cumlTime += e.Time;
 
-            Color4 backColor;
-            backColor.A = 1.0f;
-            backColor.R = 1.0f;
-            backColor.G = 0.0f;
-            backColor.B = 1.0f;
-            GL.ClearColor(backColor);
+            GL.ClearColor(new Color4(0, 0, 0, 1.0f));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
             GL.UseProgram(shaderId);
@@ -105,18 +100,19 @@ namespace Tkgl
             // Shader attributes
             GL.VertexAttrib1(0, cumlTime);
 
-            Vector4 position;
-            position.X = (float)Math.Sin(cumlTime) * 0.5f;
-            position.Y = (float)Math.Cos(cumlTime) * 0.5f;
-            position.Z = 0.0f;
-            position.W = 1.0f;
+            var position = new Vector4
+            {
+                X = (float) Math.Sin(cumlTime) * 0.5f,
+                Y = (float) Math.Cos(cumlTime) * 0.5f,
+                Z = 0.0f,
+                W = 1.0f
+            };
             GL.VertexAttrib4(1, position);
 
-            //GL.Uniform3(1, Width, Height, 0);
+            GL.Uniform3(0, Width, Height, 0.0f);
 
             // Draw commands
             screenBox.Draw();
-
 
             SwapBuffers();
         }
