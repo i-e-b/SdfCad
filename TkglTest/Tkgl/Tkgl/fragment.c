@@ -7,7 +7,7 @@ in vec4 frag_color;         // this encodes screen space XY data in the range 0.
 
 layout(location = 2) uniform vec3 iResolution;   // this encodes screen space XY data in absolute pixels
 layout(location = 3) uniform vec4 iMouse;        // mouse control input
-layout(location = 4) uniform vec3 iAspect;       // screen aspect ratio
+layout(location = 4) uniform float iAspect;       // screen aspect ratio
 layout(location = 5) uniform float iTime;        // time in seconds since start of program
 
 out vec4 fragColor;         // final pixel output color
@@ -339,7 +339,7 @@ void main()
     mo.y *= 5; mo.y -= 0.5; // scale mouse
 
     vec3 tot = vec3(0.0);
-    vec2 p = vec2(frag_color.x, frag_color.y / iAspect.x);
+    vec2 p = vec2(frag_color.x, frag_color.y / iAspect);
 
     // camera	
     vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) ); // position
