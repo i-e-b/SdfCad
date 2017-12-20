@@ -109,7 +109,9 @@ namespace Tkgl
             };
             GL.VertexAttrib4(1, position);
 
-            GL.Uniform3(0, Width, Height, 0.0f);
+            GL.Uniform3(0, Width, Height, 0.0f);                         // iResolution
+            //GL.Uniform4(1, Width / 2.0f, Height / 2.0f, 0.0f, 0.0f);     // iMouse
+            GL.Uniform4(1, 0.0f, 0.0f, 0.0f, 0.0f);     // iMouse / position
 
             // Draw commands
             screenBox.Draw();
