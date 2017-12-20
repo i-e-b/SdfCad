@@ -16,9 +16,9 @@ namespace Tkgl
         private ScreenBox screenBox;
 
         public MainWindow()
-            : base(800, 600,
+            : base(640, 480,
                   GraphicsMode.Default,
-                  "SdfCad",
+                  "SdfCad - Preview",
                   GameWindowFlags.Default,
                   DisplayDevice.Default,
                   4, 0, // OpenGL version
@@ -109,9 +109,12 @@ namespace Tkgl
             };
             GL.VertexAttrib4(1, position);
 
-            GL.Uniform3(0, Width, Height, 0.0f);                         // iResolution
-            //GL.Uniform4(1, Width / 2.0f, Height / 2.0f, 0.0f, 0.0f);     // iMouse
-            GL.Uniform4(1, 0.0f, 0.0f, 0.0f, 0.0f);     // iMouse / position
+            float aspectRatio = 1.0f + ((Width - Height) / (float)Height);
+
+            GL.Uniform3(2, Width, Height, 0.0f);                         // iResolution
+            GL.Uniform4(3, (float)Mouse.X, (float)Mouse.Y, 0.0f, 0.0f);     // iMouse
+            GL.Uniform3(4, aspectRatio, aspectRatio, aspectRatio);       // iAspect
+            GL.Uniform1(5, (float)cumlTime);                                    // iTime
 
             // Draw commands
             screenBox.Draw();

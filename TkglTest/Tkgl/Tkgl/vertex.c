@@ -2,6 +2,7 @@
 
 layout (location = 0) in float time;
 layout (location = 1) in vec4 position;
+
 out vec4 frag_color;
 
 void main(void)
