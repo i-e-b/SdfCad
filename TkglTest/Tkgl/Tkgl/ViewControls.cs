@@ -69,5 +69,11 @@ namespace Tkgl
         {
             RebindShaderOptions();
         }
+
+        private void nearFieldTrack_ValueChanged(object sender, System.EventArgs e)
+        {
+            var near = 0.5f + (nearFieldTrack.Value / 200.0f); // 0.5..5.5;
+            _previewWindow.SetNearLimit(near);
+        }
     }
 }

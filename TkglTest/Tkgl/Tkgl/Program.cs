@@ -15,8 +15,10 @@ namespace Tkgl
             Application.SetCompatibleTextRenderingDefault(false);
 
             using (var previewWindow = new PreviewWindow())
+            using (var controls = new ViewControls(previewWindow))
+            using (var model = new Model(previewWindow))
             {
-                var controls = new ViewControls(previewWindow);
+                model.Show();
                 controls.Show();
                 controls.UpdatePreview();
                 previewWindow.Run(30);

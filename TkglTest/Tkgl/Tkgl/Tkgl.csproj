@@ -51,6 +51,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Model.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Model.Designer.cs">
+      <DependentUpon>Model.cs</DependentUpon>
+    </Compile>
     <Compile Include="PreviewWindow.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -61,6 +67,9 @@
     <Compile Include="ViewControls.Designer.cs">
       <DependentUpon>ViewControls.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Model.resx">
+      <DependentUpon>Model.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -73,6 +82,7 @@
     <EmbeddedResource Include="ViewControls.resx">
       <DependentUpon>ViewControls.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="Example.glsl" />
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

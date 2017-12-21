@@ -13,6 +13,10 @@ namespace Tkgl
         private int vertexArrayId;
         private double cumlTime;
 
+        private string CurrentModel;
+
+        private const string DefaultModel = "vec2 map( in vec3 pos ) { return opU( vec2( sdPlane(pos), 1.0 ), vec2( sdSphere(pos-vec3( 0.0,0.25, sin(iTime)*0.7), 0.25 ), 46.9 ) );}";
+
         private ScreenBox screenBox;
 
         public PreviewWindow()
@@ -26,12 +30,14 @@ namespace Tkgl
         {
             shaderId = -1;
             Title += ", OpenGL v"+GL.GetString(StringName.Version);
+            CurrentModel = null;
         }
 
         public Vector4 Camera;
         private bool useAmbientOcclusion = true;
         private bool useShadows;
         private bool useReflections;
+        private float NearDistLimit = 0.5f;
 
         /// <summary>
         /// Initial set up
@@ -64,6 +70,8 @@ namespace Tkgl
 
             var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
             var fragSource = File.ReadAllText(@"fragment.c");
+
+            // TODO: clean all this up!
             if ( ! useAmbientOcclusion) {
                 fragSource = fragSource.Replace("#define AMB_OCC 1", "#define AMB_OCC 0");
             }
@@ -73,6 +81,11 @@ namespace Tkgl
             if ( useReflections) {
                 fragSource = fragSource.Replace("#define REFLECTIONS 0", "#define REFLECTIONS 1");
             }
+            
+            var map = (string.IsNullOrWhiteSpace(CurrentModel)) ? (DefaultModel) : (CurrentModel);
+            fragSource = fragSource.Replace("#define MAP_FUNCTION_INJECTED_HERE", map);
+
+
             GL.ShaderSource(fragmentShader, fragSource);
             GL.CompileShader(fragmentShader);
 
@@ -134,6 +147,7 @@ namespace Tkgl
             GL.Uniform3(3, 0.0f, 0.0f, 0.0f);   // iTargetPosition
             GL.Uniform1(4, aspectRatio);        // iAspect
             GL.Uniform1(5, (float)cumlTime);    // iTime
+            GL.Uniform1(6, NearDistLimit);      // iNear
 
             // Draw commands
             screenBox.Draw();
@@ -183,6 +197,22 @@ namespace Tkgl
         public void Fov(float fov)
         {
             Camera.W = fov;
+        }
+
+        /// <summary>
+        /// Set the model function that will be injected into the renderer.
+        /// must be a `vec2 map( in vec3 pos )`
+        /// Result: .x = distance from `pos`; .y = material ID/Value
+        /// </summary>
+        public void SetModelFunction(string text)
+        {
+            CurrentModel = text;
+            CompileShaders();
+        }
+
+        public void SetNearLimit(float distance)
+        {
+            NearDistLimit = distance;
         }
     }
 }

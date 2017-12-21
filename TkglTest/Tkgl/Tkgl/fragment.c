@@ -1,6 +1,5 @@
 ﻿#version 440 core
 
-
 // This shader is adapted from https://www.shadertoy.com/view/Xds3zN by Inigo Quilez
 
 in vec4 frag_color;         // this encodes screen space XY data in the range 0..1
@@ -9,6 +8,7 @@ layout(location = 2) uniform vec4 iCamPosition;    // position of the view camer
 layout(location = 3) uniform vec3 iTargetPosition; // point the camera is aimed at
 layout(location = 4) uniform float iAspect;        // screen aspect ratio
 layout(location = 5) uniform float iTime;          // time in seconds since start of program (for animation. To be moved out?)
+layout(location = 6) uniform float iNear;          // near distance limit. Increase to 'slice' into view
 
 out vec4 fragColor;         // final pixel output color
 
@@ -166,6 +166,11 @@ vec2 opU( vec2 d1, vec2 d2 ) {
 	return (d1.x < d2.x) ? d1 : d2;
 }
 
+// Intersection (maximum distance to either surface)
+vec2 opI( vec2 d1, vec2 d2 ) {
+	return (d1.x > d2.x) ? d1 : d2;
+}
+
 // Soft union (smooths join edges) k ~ 0.1
 // returns the surface of nearest
 vec2 opUs( vec2 a, vec2 b, float k) {
@@ -183,8 +188,7 @@ vec3 opRep( vec3 p, vec3 c ) {
 //----------------------------------------------------------------------------------------------------//
 
 // Twist
-vec3 warpTwist( vec3 p, float turns, float start )
-{
+vec3 warpTwist( vec3 p, float turns, float start ) {
     float  t = 3.141592 * turns;
     float  c = cos(t*p.y+start);
     float  s = sin(t*p.y+start);
@@ -193,14 +197,12 @@ vec3 warpTwist( vec3 p, float turns, float start )
 }
 
 // Spherical surface blobs
-vec3 warpBlobs( vec3 p)
-{
+vec3 warpBlobs( vec3 p) {
     return p + 0.04*sin(50.0*p.x)*sin(50.0*p.y)*sin(50.0*p.z);
 }
 
 // rotate around Y
-vec3 warpRotY( vec3 p, float angle )
-{
+vec3 warpRotY( vec3 p, float angle ) {
     float  c = cos(angle);
     float  s = sin(angle);
     mat2   m = mat2(c,-s,s,c);
@@ -208,8 +210,7 @@ vec3 warpRotY( vec3 p, float angle )
 }
 
 // rotate around Z
-vec3 warpRotZ( vec3 p, float angle )
-{
+vec3 warpRotZ( vec3 p, float angle ) {
     float  c = cos(angle);
     float  s = sin(angle);
     mat2   m = mat2(c,-s,s,c);
@@ -217,8 +218,7 @@ vec3 warpRotZ( vec3 p, float angle )
 }
 
 // rotate around X
-vec3 warpRotX( vec3 p, float angle )
-{
+vec3 warpRotX( vec3 p, float angle ) {
     float  c = cos(angle);
     float  s = sin(angle);
     mat2   m = mat2(c,-s,s,c);
@@ -228,62 +228,11 @@ vec3 warpRotX( vec3 p, float angle )
 
 //----------------------------------------------------------------------------------------------------//
 //   The SDF map -- this is the model to be rendered
-//   (TODO: generate this externally and feed in)
+//   This is generated externally and fed in.
 //----------------------------------------------------------------------------------------------------//
 
-// This is the actual model, it should be re-built from the outer model formula
-// result: .x = distance from `pos`; .y = material ID/Value
-vec2 map( in vec3 pos )
-{
-    // sphere on a plane
-    vec2 res = opU( vec2( sdPlane(     pos), 1.0 ), vec2( sdSphere(    pos-vec3( 0.0,0.25, sin(iTime)*0.7), 0.25 ), 46.9 ) );
+#define MAP_FUNCTION_INJECTED_HERE
 
-    // some basic shapes (note each is unioned with the model-so-far)
-    res = opU( res, vec2( sdBox(       warpRotY(pos-vec3( 1.0,0.25, 0.0),iTime), vec3(0.25) ), 3.0 ) );
-    res = opU( res, vec2( udRoundBox(  warpRotX(pos-vec3( 1.0,0.25, 1.0),iTime), vec3(0.15), 0.1 ), 41.0 ) );
-	res = opU( res, vec2( sdTorus(     warpRotZ(pos-vec3( 0.0,0.25, 1.0),iTime), vec2(0.20,0.05) ), 25.0 ) );
-    res = opU( res, vec2( sdCapsule(   pos,vec3(-1.3,0.10,-0.1), vec3(-0.8,0.50,0.2), 0.1  ), 31.9 ) );
-	res = opU( res, vec2( sdTriPrism(  pos-vec3(-1.0,0.25,-1.0), vec2(0.25,0.05) ),43.5 ) );
-	res = opU( res, vec2( sdCylinder(  pos-vec3( 1.0,0.30,-1.0), vec2(0.1,0.2) ), 8.0 ) );
-	res = opU( res, vec2( sdCone(      pos-vec3( 0.0,0.50,-1.0), vec3(0.8,0.6,0.3) ), 55.0 ) );
-	
-    vec2 rings = opUs( // soft join
-        vec2( sdTorus82(   pos-vec3( 0.0, 0.25, 2.0), vec2(0.20,0.05) ),50.0 ),   // round ring
-        vec2( sdTorus88(   pos-vec3(-0.5, 0.25, 2.0), vec2(0.20,0.05) ),43.0 ),   // squared ring
-        0.1 // smoothing parameter
-    );
-    res = opU(res, rings);
-    //res = opU( res, vec2( sdTorus82(   pos-vec3( 0.0, 0.25, 2.0), vec2(0.20,0.05) ),50.0 ) )
-	//res = opU( res, vec2( sdTorus88(   pos-vec3(-0.5, 0.25, 2.0), vec2(0.20,0.05) ),43.0 ) );
-
-	res = opU( res, vec2( sdCylinder6( pos-vec3( 1.0,0.30, 2.0), vec2(0.1,0.2) ), 12.0 ) );
-	res = opU( res, vec2( sdHexPrism(  pos-vec3(-1.0,0.20, 1.0), vec2(0.25,0.05) ),17.0 ) );
-	res = opU( res, vec2( sdPryamid4(  pos-vec3(-1.0,0.15,-2.0), vec3(0.8,0.6,0.25) ),37.0 ) );
-    
-    // box with sphere cut out
-    res = opU( res, vec2( opS( udRoundBox(  pos-vec3(-2.0,0.2, 1.0), vec3(0.15),0.05),
-	                           sdSphere(    pos-vec3(-2.0,0.2, 1.0), 0.25)), 13.0 ) );
-
-
-    // gear-wheel-donut thing
-    res = opU( res, vec2( opS( sdTorus82(  pos-vec3(-2.0,0.2, 0.0), vec2(0.20,0.1)),
-	                           sdCylinder(  opRep( vec3(atan(pos.x+2.0,pos.z)/6.2831, pos.y, 0.02+0.5*length(pos-vec3(-2.0,0.2, 0.0))), vec3(0.05,1.0,0.05)), vec2(0.02,0.6))), 51.0 ) );
-    
-	
-    // blobby sphere
-    res = opU( res, vec2( 0.5*sdSphere(  warpBlobs(pos-vec3(-2.0,0.25,-1.0)), 0.2), 65.0 ) );
-
-    // twisted loop
-	res = opU( res, vec2( 0.5*sdTorus( warpTwist(pos-vec3(-2.0,0.25, 2.0), /*turns*/2, /*start rot*/iTime),vec2(0.20,0.05)), 46.7 ) );
-
-    // truncated cone
-    res = opU( res, vec2( sdConeSection( pos-vec3( 0.0,0.35,-2.0), 0.15, 0.2, 0.1 ), 13.67 ) );
-
-    // flattened sphere
-    res = opU( res, vec2( sdEllipsoid( pos-vec3( 1.0,0.35,-2.0), vec3(0.15, 0.2, 0.05) ), 43.17 ) );
-        
-    return res;
-}
 
 //----------------------------------------------------------------------------------------------------//
 //   The rendering code
@@ -292,7 +241,7 @@ vec2 map( in vec3 pos )
 // Do the ray-march of the SDF function
 vec2 castRay( in vec3 ro, in vec3 rd )
 {
-    float tmin = 0.5;  // near clip plane
+    float tmin = iNear;  // near clip plane
     float tmax = 20.0; // far clip plane
     
     float t = tmin;
@@ -309,20 +258,21 @@ vec2 castRay( in vec3 ro, in vec3 rd )
     return vec2( t, m );
 }
 
-// looks nice, but takes a lot of calculation.
-float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax )
+// looks nice, but takes a lot of calculation. `k` is sharpness (higher = sharper). Set high for reflections.
+float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax, in float k )
 {
 	float res = 1.0;
     float t = mint;
     for( int i=0; i < SHADOW_QUALITY; i++ )
     {
 		float h = map( ro + rd*t ).x;
-        res = min( res, 8.0*h/t );
+        res = min( res, k*h/t );
         t += clamp( h, 0.02, 0.10 ); // set a minimum and maximum step size
         if( h<0.001 || t>tmax ) break;
     }
     return clamp( res, 0.0, 1.0 );
 }
+
 
 // calculate a surface normal by inpecting the isosurface nearby
 vec3 calcNormal( in vec3 pos )
@@ -388,12 +338,12 @@ vec3 render( in vec3 ro, in vec3 rd )
     float dom = 1.0;
     
     #if SHADOWS
-    dif *= softshadow( pos, lig, 0.02, 2.5 );
+    dif *= softshadow( pos, lig, 0.02, 2.5, /* hardness */ 2.0 );
     #endif
     #if REFLECTIONS
     vec3 ref = reflect( rd, nor );
     dom = smoothstep( -0.1, 0.1, ref.y );
-    dom *= softshadow( pos, ref, 0.02, 2.5 );
+    dom *= softshadow( pos, ref, 0.02, 2.5, /* hardness */ 32.0 );
     #endif
 
     // Shine
