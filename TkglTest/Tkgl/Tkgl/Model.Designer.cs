@@ -39,11 +39,14 @@
             this.programTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.programTextBox.Location = new System.Drawing.Point(12, 12);
+            this.programTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.programTextBox.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.programTextBox.Location = new System.Drawing.Point(0, 0);
             this.programTextBox.Name = "programTextBox";
-            this.programTextBox.Size = new System.Drawing.Size(486, 275);
+            this.programTextBox.Size = new System.Drawing.Size(512, 287);
             this.programTextBox.TabIndex = 0;
-            this.programTextBox.Text = "";
+            this.programTextBox.Text = "vec2 map( in vec3 pos ) {\n     return opU( vec2( sdPlane(pos), 1.0 ), vec2( sdSph" +
+    "ere(pos-vec3( 0.0,0.25, sin(iTime)*0.7), 0.25 ), 46.9 ) );\n}";
             // 
             // uploadButton
             // 
