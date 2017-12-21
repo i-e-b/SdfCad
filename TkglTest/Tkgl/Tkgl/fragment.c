@@ -15,8 +15,14 @@ out vec4 fragColor;         // final pixel output color
 // Note for Shadertoy conversion: `fragCoord` should be replaced with `gl_FragCoord.xy`
 // The rendering code is down at the bottom
 
-// Set to 1 to get cast soft shadows
+// Ambient occlusion shading
+#define AMB_OCC 1
+
+// Cast soft shadows
 #define SHADOWS 0
+
+// raycast reflections
+#define REFLECTIONS 0
 
 // More steps = more refined shadows (if enabled)
 #define SHADOW_QUALITY 16
@@ -338,7 +344,6 @@ vec3 render( in vec3 ro, in vec3 rd )
 
     vec3 pos = ro + t*rd;
     vec3 nor = calcNormal( pos );
-    vec3 ref = reflect( rd, nor );
     
     // material (make up a color based on position)
     col = 0.45 + 0.35*sin( vec3(0.05,0.08,0.10)*(m-1.0) ); // color based on 'material' returned from `map`
@@ -350,18 +355,26 @@ vec3 render( in vec3 ro, in vec3 rd )
         col = 0.3 + 0.1*f*vec3(1.0);
     }
 
-    // lighting        
+    // lighting
+    #if AMB_OCC
     float occ = calcAO( pos, nor ); // Ambient occlusion
+    #else
+    float occ = 1.0;
+    #endif
     vec3  lig = normalize( vec3(-0.4, 0.7, -0.6) );
     vec3  hal = normalize( lig-rd );
     float amb = clamp( 0.5+0.5*nor.y, 0.0, 1.0 );
     float dif = clamp( dot( nor, lig ), 0.0, 1.0 );
     float bac = clamp( dot( nor, normalize(vec3(-lig.x,0.0,-lig.z))), 0.0, 1.0 )*clamp( 1.0-pos.y,0.0,1.0);
-    float dom = smoothstep( -0.1, 0.1, ref.y );
     float fre = pow( clamp(1.0+dot(nor,rd),0.0,1.0), 2.0 );
+    float dom = 1.0;
     
     #if SHADOWS
     dif *= softshadow( pos, lig, 0.02, 2.5 );
+    #endif
+    #if REFLECTIONS
+    vec3 ref = reflect( rd, nor );
+    dom = smoothstep( -0.1, 0.1, ref.y );
     dom *= softshadow( pos, ref, 0.02, 2.5 );
     #endif
 
@@ -397,15 +410,7 @@ mat3 setCamera( in vec3 ro, in vec3 ta, float cr )
 
 void main()
 {
-    // get a position from mouse and time. TODO: feed the position and target directly into the program
-
-    vec2 mo = iMouse.xy ;// / iResolution.xy;
-	float time = 0.0;//15.0 + iTime; // auto-rotate.
-
-    mo.y *= 5; mo.y -= 0.5; // scale mouse
-
-    vec2 p = vec2(frag_color.x, frag_color.y / iAspect); // screen space position (acts as eye ray direction)
-    //vec2 p = (-iResolution.xy + 2.0*gl_FragCoord.xy)/iResolution.y;
+    vec2 p = vec2(frag_color.x, frag_color.y / iAspect); // screen space position (from vertex shader, acts as eye ray direction)
 
     // camera	
     //vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) ); // position (Rotation Origin)

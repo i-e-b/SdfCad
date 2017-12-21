@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows.Forms;
 
 namespace Tkgl
 {
@@ -10,11 +11,15 @@ namespace Tkgl
         [STAThread]
         static void Main()
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
             using (var previewWindow = new PreviewWindow())
             {
                 var controls = new ViewControls(previewWindow);
                 controls.Show();
-                previewWindow.Run(60);
+                controls.UpdatePreview();
+                previewWindow.Run(30);
             }
         }
     }

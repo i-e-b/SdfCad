@@ -8,17 +8,27 @@ namespace Tkgl
         float theta = 0.0f;
         float elevation = 1.0f;
         float fov = 2.0f;
+        float distance = 1.0f;
 
         public ViewControls(PreviewWindow previewWindow)
         {
             _previewWindow = previewWindow;
             InitializeComponent();
+            camXZTrack_ValueChanged(null,null);
+            camYTrack_ValueChanged(null,null);
+            camFovTrack_ValueChanged(null,null);
+            camDistTrack_ValueChanged(null,null);
         }
 
-        private void UpdatePreview()
+        public void UpdatePreview()
         {
-            _previewWindow.CameraPosition(theta, elevation);
+            _previewWindow.CameraPosition(theta, elevation, distance);
             _previewWindow.Fov(fov);
+        }
+
+        private void RebindShaderOptions()
+        {
+            _previewWindow.RebindShader(ambientOccCheckbox.Checked, shadowCheckbox.Checked, reflectionsCheckbox.Checked);
         }
 
         private void camXZTrack_ValueChanged(object sender, System.EventArgs e)
@@ -29,7 +39,7 @@ namespace Tkgl
 
         private void camYTrack_ValueChanged(object sender, System.EventArgs e)
         {
-            elevation = camYTrack.Value / 100.0f; // 0..2π
+            elevation = (camYTrack.Value / 100.0f) - 1.0f; // -1..9
             UpdatePreview();
         }
 
@@ -37,6 +47,27 @@ namespace Tkgl
         {
             fov = 1.0f + (camFovTrack.Value / 50.0f); // 1..3;
             UpdatePreview();
+        }
+
+        private void camDistTrack_ValueChanged(object sender, System.EventArgs e)
+        {
+            distance = 1.0f + (camDistTrack.Value / 100.0f); // 1..11;
+            UpdatePreview();
+        }
+
+        private void ambientOccCheckbox_CheckedChanged(object sender, System.EventArgs e)
+        {
+            RebindShaderOptions();
+        }
+
+        private void shadowCheckbox_CheckedChanged(object sender, System.EventArgs e)
+        {
+            RebindShaderOptions();
+        }
+
+        private void reflectionsCheckbox_CheckedChanged(object sender, System.EventArgs e)
+        {
+            RebindShaderOptions();
         }
     }
 }

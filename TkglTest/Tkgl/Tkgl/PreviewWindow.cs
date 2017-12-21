@@ -24,13 +24,14 @@ namespace Tkgl
                   4, 0, // OpenGL version
                   GraphicsContextFlags.ForwardCompatible)
         {
+            shaderId = -1;
             Title += ", OpenGL v"+GL.GetString(StringName.Version);
-            CameraPosition(0.0f, 1.0f);
-            Fov(2.0f);
         }
 
         public Vector4 Camera;
-
+        private bool useAmbientOcclusion = true;
+        private bool useShadows;
+        private bool useReflections;
 
         /// <summary>
         /// Initial set up
@@ -39,7 +40,7 @@ namespace Tkgl
         {
             base.OnLoad(e);
             CursorVisible = true;
-            shaderId = CompileShaders();
+            CompileShaders();
             
             GL.GenVertexArrays(1, out vertexArrayId);
             GL.BindVertexArray(vertexArrayId);
@@ -50,14 +51,29 @@ namespace Tkgl
             Closed += OnClosed;
         }
 
-        private int CompileShaders()
+        private void CompileShaders()
         {
+            if (shaderId < 0) {
+                GL.DeleteProgram(shaderId);
+                shaderId = -1;
+            }
+
             var vertexShader = GL.CreateShader(ShaderType.VertexShader);
             GL.ShaderSource(vertexShader, File.ReadAllText(@"vertex.c"));
             GL.CompileShader(vertexShader);
 
             var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, File.ReadAllText(@"fragment.c"));
+            var fragSource = File.ReadAllText(@"fragment.c");
+            if ( ! useAmbientOcclusion) {
+                fragSource = fragSource.Replace("#define AMB_OCC 1", "#define AMB_OCC 0");
+            }
+            if ( useShadows) {
+                fragSource = fragSource.Replace("#define SHADOWS 0", "#define SHADOWS 1");
+            }
+            if ( useReflections) {
+                fragSource = fragSource.Replace("#define REFLECTIONS 0", "#define REFLECTIONS 1");
+            }
+            GL.ShaderSource(fragmentShader, fragSource);
             GL.CompileShader(fragmentShader);
 
             var program = GL.CreateProgram();
@@ -78,7 +94,15 @@ namespace Tkgl
                 throw new Exception(log);
             }
 
-            return program;
+            shaderId =  program;
+        }
+
+        public void RebindShader(bool ambOcc, bool shadows, bool reflections)
+        {
+            useAmbientOcclusion = ambOcc;
+            useShadows = shadows;
+            useReflections = reflections;
+            CompileShaders();
         }
 
         /// <summary>
@@ -103,23 +127,11 @@ namespace Tkgl
             GL.UseProgram(shaderId);
 
             // Shader attributes
-            //GL.VertexAttrib1(0, cumlTime);
-
-            var position = new Vector4
-            {
-                X = (float) Math.Sin(cumlTime) * 0.5f,
-                Y = (float) Math.Cos(cumlTime) * 0.5f,
-                Z = 0.0f,
-                W = 1.0f
-            };
-            GL.VertexAttrib4(0, position);
-
             float aspectRatio = 1.0f + ((Width - Height) / (float)Height);
 
             // NOTE: it is *CRITICAL* that the types on the .Net side are the same as in the shader program.
-            //GL.Uniform3(2, Width, Height, 0.0f);                         // iResolution
-            GL.Uniform4(2, ref Camera);                         // iResolution
-            GL.Uniform4(3, (float)Mouse.X, (float)Mouse.Y, 0.0f, 0.0f);  // iMouse
+            GL.Uniform4(2, ref Camera);
+            GL.Uniform4(3, Mouse.X, Mouse.Y, 0.0f, 0.0f);  // iMouse
             GL.Uniform1(4, aspectRatio);                                 // iAspect
             GL.Uniform1(5, (float)cumlTime);                             // iTime
 
@@ -156,10 +168,16 @@ namespace Tkgl
             GL.Viewport(0, 0, Width, Height);
         }
 
-        public void CameraPosition(float theta, float elevation)
+        /// <summary>
+        /// Set the camera position as a rotation and distance from the stage centre
+        /// </summary>
+        /// <param name="theta">rotation around stage</param>
+        /// <param name="elevation">height above stage</param>
+        /// <param name="distance">distance from stage centre</param>
+        public void CameraPosition(float theta, float elevation, float distance)
         {
-            //vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) );
-            Camera = new Vector4((float) -Math.Cos(theta), 1.0f + elevation, (float)Math.Sin(theta), 2.0f);
+            var oldFov = (Camera.W < 1.0f) ? 2.0f : Camera.W;
+            Camera = new Vector4((float) -Math.Cos(theta) * distance, 1.0f + elevation, (float)Math.Sin(theta) * distance, oldFov);
         }
 
         public void Fov(float fov)

@@ -4,3 +4,5 @@ Configurable distance threshold `tdist` and feature scale threshold `fsize`.
 Split faces at distance points, continuing until either distance is less than tdist, or all faces of the subdivided cuboid are <= fsize for their axis.
 
 Then tetrahedral breakdown of the octree elements that cross zero.
+
+Or maybe export the STL file by doing a slice directly on the SDF model -- that might be (?slower) but more able to handle the difference between minimum feature size and positional accuracy.
