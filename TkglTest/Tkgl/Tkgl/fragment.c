@@ -15,10 +15,14 @@ out vec4 fragColor;         // final pixel output color
 // Note for Shadertoy conversion: `fragCoord` should be replaced with `gl_FragCoord.xy`
 // The rendering code is down at the bottom
 
-// Uncomment to get cast soft shadows
-//#define SHADOWS
+// Set to 1 to get cast soft shadows
+#define SHADOWS 0
+
+// More steps = more refined shadows (if enabled)
+#define SHADOW_QUALITY 16
 
 // More step gives better quality but (potentially) lower framerates
+// This mostly affects viewing angles that are shallow to a long surface
 // Reasonable range is 50 to 100
 #define STEPS 64
 
@@ -164,6 +168,10 @@ vec3 opRep( vec3 p, vec3 c )
     return mod(p,c)-0.5*c;
 }
 
+//----------------------------------------------------------------------------------------------------//
+//   Space-warping operations
+//----------------------------------------------------------------------------------------------------//
+
 // Twist
 vec3 warpTwist( vec3 p, float turns, float start )
 {
@@ -174,6 +182,20 @@ vec3 warpTwist( vec3 p, float turns, float start )
     return vec3(m*p.xz,p.y);
 }
 
+// Spherical surface blobs
+vec3 warpBlobs( vec3 p)
+{
+    return p + 0.04*sin(50.0*p.x)*sin(50.0*p.y)*sin(50.0*p.z);
+}
+
+// rotate around Y
+vec3 warpRotY( vec3 p, float angle )
+{
+    float  c = cos(angle);
+    float  s = sin(angle);
+    mat2   m = mat2(c,-s,s,c);
+    return vec3(m*p.xz,p.y);
+}
 
 //----------------------------------------------------------------------------------------------------//
 //   The rendering code
@@ -184,10 +206,11 @@ vec3 warpTwist( vec3 p, float turns, float start )
 vec2 map( in vec3 pos )
 {
     // sphere on a plane
-    vec2 res = opU( vec2( sdPlane(     pos), 1.0 ), vec2( sdSphere(    pos-vec3( 0.0,0.25, 0.5), 0.25 ), 46.9 ) );
+    vec2 res = opU( vec2( sdPlane(     pos), 1.0 ), vec2( sdSphere(    pos-vec3( 0.0,0.25, sin(iTime)*0.7), 0.25 ), 46.9 ) );
 
     // some basic shapes (note each is unioned with the model-so-far)
-    res = opU( res, vec2( sdBox(       pos-vec3( 1.0,0.25, 0.0), vec3(0.25) ), 3.0 ) );
+    //res = opU( res, vec2( sdBox(       pos-vec3( 1.0,0.25, 0.0), vec3(0.25) ), 3.0 ) );
+    res = opU( res, vec2( sdBox(       warpRotY(pos-vec3( 1.0,0.25, 0.0),iTime), vec3(0.25) ), 3.0 ) );
     res = opU( res, vec2( udRoundBox(  pos-vec3( 1.0,0.25, 1.0), vec3(0.15), 0.1 ), 41.0 ) );
 	res = opU( res, vec2( sdTorus(     pos-vec3( 0.0,0.25, 1.0), vec2(0.20,0.05) ), 25.0 ) );
     res = opU( res, vec2( sdCapsule(   pos,vec3(-1.3,0.10,-0.1), vec3(-0.8,0.50,0.2), 0.1  ), 31.9 ) );
@@ -211,7 +234,8 @@ vec2 map( in vec3 pos )
     
 	
     // blobby sphere (note how the incoming `pos` is deformed. This is the blobbyness. Otherwise it's a plain sphere)
-    res = opU( res, vec2( 0.5*sdSphere(    pos-vec3(-2.0,0.25,-1.0), 0.2 ) + 0.03*sin(50.0*pos.x)*sin(50.0*pos.y)*sin(50.0*pos.z), 65.0 ) );
+    //res = opU( res, vec2( 0.5*sdSphere(    pos-vec3(-2.0,0.25,-1.0), 0.2 ) + 0.03*sin(50.0*pos.x)*sin(50.0*pos.y)*sin(50.0*pos.z), 65.0 ) );
+    res = opU( res, vec2( 0.5*sdSphere(  warpBlobs(pos-vec3(-2.0,0.25,-1.0)), 0.2), 65.0 ) );
 
     // twisted loop
 	res = opU( res, vec2( 0.5*sdTorus( warpTwist(pos-vec3(-2.0,0.25, 2.0), /*turns*/2, /*start rot*/iTime),vec2(0.20,0.05)), 46.7 ) );
@@ -250,11 +274,11 @@ float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax )
 {
 	float res = 1.0;
     float t = mint;
-    for( int i=0; i<16; i++ )
+    for( int i=0; i < SHADOW_QUALITY; i++ )
     {
 		float h = map( ro + rd*t ).x;
         res = min( res, 8.0*h/t );
-        t += clamp( h, 0.202, 0.10 );
+        t += clamp( h, 0.02, 0.10 ); // set a minimum and maximum step size
         if( h<0.001 || t>tmax ) break;
     }
     return clamp( res, 0.0, 1.0 );
@@ -320,7 +344,7 @@ vec3 render( in vec3 ro, in vec3 rd )
     float dom = smoothstep( -0.1, 0.1, ref.y );
     float fre = pow( clamp(1.0+dot(nor,rd),0.0,1.0), 2.0 );
     
-    #ifdef SHADOWS
+    #if SHADOWS
     dif *= softshadow( pos, lig, 0.02, 2.5 );
     dom *= softshadow( pos, ref, 0.02, 2.5 );
     #endif
