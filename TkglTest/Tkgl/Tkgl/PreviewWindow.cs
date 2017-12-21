@@ -7,7 +7,7 @@ using OpenTK.Input;
 
 namespace Tkgl
 {
-    public class MainWindow : GameWindow
+    public class PreviewWindow : GameWindow
     {
         private int shaderId;
         private int vertexArrayId;
@@ -15,7 +15,7 @@ namespace Tkgl
 
         private ScreenBox screenBox;
 
-        public MainWindow()
+        public PreviewWindow()
             : base(640, 480,
                   GraphicsMode.Default,
                   "SdfCad - Preview",
@@ -25,7 +25,12 @@ namespace Tkgl
                   GraphicsContextFlags.ForwardCompatible)
         {
             Title += ", OpenGL v"+GL.GetString(StringName.Version);
+            CameraPosition(0.0f, 1.0f);
+            Fov(2.0f);
         }
+
+        public Vector4 Camera;
+
 
         /// <summary>
         /// Initial set up
@@ -98,7 +103,7 @@ namespace Tkgl
             GL.UseProgram(shaderId);
 
             // Shader attributes
-            GL.VertexAttrib1(0, cumlTime);
+            //GL.VertexAttrib1(0, cumlTime);
 
             var position = new Vector4
             {
@@ -107,12 +112,13 @@ namespace Tkgl
                 Z = 0.0f,
                 W = 1.0f
             };
-            GL.VertexAttrib4(1, position);
+            GL.VertexAttrib4(0, position);
 
             float aspectRatio = 1.0f + ((Width - Height) / (float)Height);
 
             // NOTE: it is *CRITICAL* that the types on the .Net side are the same as in the shader program.
-            GL.Uniform3(2, Width, Height, 0.0f);                         // iResolution
+            //GL.Uniform3(2, Width, Height, 0.0f);                         // iResolution
+            GL.Uniform4(2, ref Camera);                         // iResolution
             GL.Uniform4(3, (float)Mouse.X, (float)Mouse.Y, 0.0f, 0.0f);  // iMouse
             GL.Uniform1(4, aspectRatio);                                 // iAspect
             GL.Uniform1(5, (float)cumlTime);                             // iTime
@@ -148,6 +154,17 @@ namespace Tkgl
         {
             base.OnResize(e);
             GL.Viewport(0, 0, Width, Height);
+        }
+
+        public void CameraPosition(float theta, float elevation)
+        {
+            //vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) );
+            Camera = new Vector4((float) -Math.Cos(theta), 1.0f + elevation, (float)Math.Sin(theta), 2.0f);
+        }
+
+        public void Fov(float fov)
+        {
+            Camera.W = fov;
         }
     }
 }

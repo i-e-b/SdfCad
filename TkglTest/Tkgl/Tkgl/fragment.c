@@ -5,8 +5,8 @@
 
 in vec4 frag_color;         // this encodes screen space XY data in the range 0..1
 
-layout(location = 2) uniform vec3 iResolution;   // this encodes screen space XY data in absolute pixels
-layout(location = 3) uniform vec4 iMouse;        // mouse control input
+layout(location = 2) uniform vec4 iCamPosition;   // position of the view camera. `.w` is fov
+layout(location = 3) uniform vec4 iMouse;         // mouse control input
 layout(location = 4) uniform float iAspect;       // screen aspect ratio
 layout(location = 5) uniform float iTime;        // time in seconds since start of program
 
@@ -197,6 +197,24 @@ vec3 warpRotY( vec3 p, float angle )
     return vec3(m*p.xz,p.y);
 }
 
+// rotate around Z
+vec3 warpRotZ( vec3 p, float angle )
+{
+    float  c = cos(angle);
+    float  s = sin(angle);
+    mat2   m = mat2(c,-s,s,c);
+    return vec3(m*p.xy,p.z);
+}
+
+// rotate around X
+vec3 warpRotX( vec3 p, float angle )
+{
+    float  c = cos(angle);
+    float  s = sin(angle);
+    mat2   m = mat2(c,-s,s,c);
+    return vec3(m*p.yz,p.x);
+}
+
 //----------------------------------------------------------------------------------------------------//
 //   The rendering code
 //----------------------------------------------------------------------------------------------------//
@@ -209,10 +227,9 @@ vec2 map( in vec3 pos )
     vec2 res = opU( vec2( sdPlane(     pos), 1.0 ), vec2( sdSphere(    pos-vec3( 0.0,0.25, sin(iTime)*0.7), 0.25 ), 46.9 ) );
 
     // some basic shapes (note each is unioned with the model-so-far)
-    //res = opU( res, vec2( sdBox(       pos-vec3( 1.0,0.25, 0.0), vec3(0.25) ), 3.0 ) );
     res = opU( res, vec2( sdBox(       warpRotY(pos-vec3( 1.0,0.25, 0.0),iTime), vec3(0.25) ), 3.0 ) );
-    res = opU( res, vec2( udRoundBox(  pos-vec3( 1.0,0.25, 1.0), vec3(0.15), 0.1 ), 41.0 ) );
-	res = opU( res, vec2( sdTorus(     pos-vec3( 0.0,0.25, 1.0), vec2(0.20,0.05) ), 25.0 ) );
+    res = opU( res, vec2( udRoundBox(  warpRotX(pos-vec3( 1.0,0.25, 1.0),iTime), vec3(0.15), 0.1 ), 41.0 ) );
+	res = opU( res, vec2( sdTorus(     warpRotZ(pos-vec3( 0.0,0.25, 1.0),iTime), vec2(0.20,0.05) ), 25.0 ) );
     res = opU( res, vec2( sdCapsule(   pos,vec3(-1.3,0.10,-0.1), vec3(-0.8,0.50,0.2), 0.1  ), 31.9 ) );
 	res = opU( res, vec2( sdTriPrism(  pos-vec3(-1.0,0.25,-1.0), vec2(0.25,0.05) ),43.5 ) );
 	res = opU( res, vec2( sdCylinder(  pos-vec3( 1.0,0.30,-1.0), vec2(0.1,0.2) ), 8.0 ) );
@@ -233,8 +250,7 @@ vec2 map( in vec3 pos )
 	                           sdCylinder(  opRep( vec3(atan(pos.x+2.0,pos.z)/6.2831, pos.y, 0.02+0.5*length(pos-vec3(-2.0,0.2, 0.0))), vec3(0.05,1.0,0.05)), vec2(0.02,0.6))), 51.0 ) );
     
 	
-    // blobby sphere (note how the incoming `pos` is deformed. This is the blobbyness. Otherwise it's a plain sphere)
-    //res = opU( res, vec2( 0.5*sdSphere(    pos-vec3(-2.0,0.25,-1.0), 0.2 ) + 0.03*sin(50.0*pos.x)*sin(50.0*pos.y)*sin(50.0*pos.z), 65.0 ) );
+    // blobby sphere
     res = opU( res, vec2( 0.5*sdSphere(  warpBlobs(pos-vec3(-2.0,0.25,-1.0)), 0.2), 65.0 ) );
 
     // twisted loop
@@ -383,7 +399,7 @@ void main()
 {
     // get a position from mouse and time. TODO: feed the position and target directly into the program
 
-    vec2 mo = iMouse.xy / iResolution.xy;
+    vec2 mo = iMouse.xy ;// / iResolution.xy;
 	float time = 0.0;//15.0 + iTime; // auto-rotate.
 
     mo.y *= 5; mo.y -= 0.5; // scale mouse
@@ -392,12 +408,13 @@ void main()
     //vec2 p = (-iResolution.xy + 2.0*gl_FragCoord.xy)/iResolution.y;
 
     // camera	
-    vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) ); // position (Rotation Origin)
-    vec3 ta = vec3( -0.5, -0.4, 0.5 ); // target
+    //vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) ); // position (Rotation Origin)
+    vec3 ro = iCamPosition.xyz;
+    vec3 ta = vec3( 0,0,0 ); // target
     // camera-to-world transformation
     mat3 ca = setCamera( ro, ta, 0.0 );
     // ray direction
-    vec3 rd = ca * normalize( vec3(p.xy, 2.0) ); // 2.0 here is the focal length. Lower = wider angle. Higher = telephoto
+    vec3 rd = ca * normalize( vec3(p.xy, iCamPosition.w) ); // 2.0 here is the focal length. Lower = wider angle. Higher = telephoto
 
     // render -- do the minimum-distance ray march, lighting and coloring
     vec3 col = render( ro, rd );

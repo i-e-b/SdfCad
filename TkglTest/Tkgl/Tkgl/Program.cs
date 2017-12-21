@@ -10,9 +10,11 @@ namespace Tkgl
         [STAThread]
         static void Main()
         {
-            using (var window = new MainWindow())
+            using (var previewWindow = new PreviewWindow())
             {
-                window.Run(60);
+                var controls = new ViewControls(previewWindow);
+                controls.Show();
+                previewWindow.Run(60);
             }
         }
     }
