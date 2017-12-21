@@ -130,10 +130,10 @@ namespace Tkgl
             float aspectRatio = 1.0f + ((Width - Height) / (float)Height);
 
             // NOTE: it is *CRITICAL* that the types on the .Net side are the same as in the shader program.
-            GL.Uniform4(2, ref Camera);
-            GL.Uniform4(3, Mouse.X, Mouse.Y, 0.0f, 0.0f);  // iMouse
-            GL.Uniform1(4, aspectRatio);                                 // iAspect
-            GL.Uniform1(5, (float)cumlTime);                             // iTime
+            GL.Uniform4(2, ref Camera);         // iCamPosition
+            GL.Uniform3(3, 0.0f, 0.0f, 0.0f);   // iTargetPosition
+            GL.Uniform1(4, aspectRatio);        // iAspect
+            GL.Uniform1(5, (float)cumlTime);    // iTime
 
             // Draw commands
             screenBox.Draw();

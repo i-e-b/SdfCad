@@ -5,10 +5,10 @@
 
 in vec4 frag_color;         // this encodes screen space XY data in the range 0..1
 
-layout(location = 2) uniform vec4 iCamPosition;   // position of the view camera. `.w` is fov
-layout(location = 3) uniform vec4 iMouse;         // mouse control input
-layout(location = 4) uniform float iAspect;       // screen aspect ratio
-layout(location = 5) uniform float iTime;        // time in seconds since start of program
+layout(location = 2) uniform vec4 iCamPosition;    // position of the view camera. `.w` is fov
+layout(location = 3) uniform vec3 iTargetPosition; // point the camera is aimed at
+layout(location = 4) uniform float iAspect;        // screen aspect ratio
+layout(location = 5) uniform float iTime;          // time in seconds since start of program (for animation. To be moved out?)
 
 out vec4 fragColor;         // final pixel output color
 
@@ -27,13 +27,13 @@ out vec4 fragColor;         // final pixel output color
 // More steps = more refined shadows (if enabled)
 #define SHADOW_QUALITY 16
 
-// More step gives better quality but (potentially) lower framerates
+// More steps gives better quality but (potentially) lower framerates
 // This mostly affects viewing angles that are shallow to a long surface
 // Reasonable range is 50 to 100
-#define STEPS 64
+#define MAX_STEPS 64
 
 //----------------------------------------------------------------------------------------------------//
-//   Object formulas
+//   Object formulas (TODO: move out to generator)
 //----------------------------------------------------------------------------------------------------//
 
 float sdPlane( vec3 p ) { return p.y; }
@@ -153,29 +153,33 @@ float sdCylinder6( vec3 p, vec2 h ) {
 
 
 //----------------------------------------------------------------------------------------------------//
-//   Combining operations
+//   Combining operations (TODO: move out to generator)
 //----------------------------------------------------------------------------------------------------//
 
-// Subtraction
-float opS( float d1, float d2 )
-{
+// Subtraction (surface of d1 with d2 removed)
+float opS( float d1, float d2 ) {
     return max(-d2,d1);
 }
 
-// Union
-vec2 opU( vec2 d1, vec2 d2 )
-{
-	return (d1.x<d2.x) ? d1 : d2;
+// Union (minimum distance to either surface)
+vec2 opU( vec2 d1, vec2 d2 ) {
+	return (d1.x < d2.x) ? d1 : d2;
+}
+
+// Soft union (smooths join edges) k ~ 0.1
+// returns the surface of nearest
+vec2 opUs( vec2 a, vec2 b, float k) {
+    float h = clamp( 0.5+0.5*(b.x-a.x)/k, 0.0, 1.0 );
+    return vec2(mix( b.x, a.x, h ) - k*h*(1.0-h), (a.x < b.x) ? a.y : b.y);
 }
 
 // repeat
-vec3 opRep( vec3 p, vec3 c )
-{
+vec3 opRep( vec3 p, vec3 c ) {
     return mod(p,c)-0.5*c;
 }
 
 //----------------------------------------------------------------------------------------------------//
-//   Space-warping operations
+//   Space-warping operations (TODO: move out to generator)
 //----------------------------------------------------------------------------------------------------//
 
 // Twist
@@ -221,8 +225,10 @@ vec3 warpRotX( vec3 p, float angle )
     return vec3(m*p.yz,p.x);
 }
 
+
 //----------------------------------------------------------------------------------------------------//
-//   The rendering code
+//   The SDF map -- this is the model to be rendered
+//   (TODO: generate this externally and feed in)
 //----------------------------------------------------------------------------------------------------//
 
 // This is the actual model, it should be re-built from the outer model formula
@@ -240,8 +246,16 @@ vec2 map( in vec3 pos )
 	res = opU( res, vec2( sdTriPrism(  pos-vec3(-1.0,0.25,-1.0), vec2(0.25,0.05) ),43.5 ) );
 	res = opU( res, vec2( sdCylinder(  pos-vec3( 1.0,0.30,-1.0), vec2(0.1,0.2) ), 8.0 ) );
 	res = opU( res, vec2( sdCone(      pos-vec3( 0.0,0.50,-1.0), vec3(0.8,0.6,0.3) ), 55.0 ) );
-	res = opU( res, vec2( sdTorus82(   pos-vec3( 0.0,0.25, 2.0), vec2(0.20,0.05) ),50.0 ) );
-	res = opU( res, vec2( sdTorus88(   pos-vec3(-1.0,0.25, 2.0), vec2(0.20,0.05) ),43.0 ) );
+	
+    vec2 rings = opUs( // soft join
+        vec2( sdTorus82(   pos-vec3( 0.0, 0.25, 2.0), vec2(0.20,0.05) ),50.0 ),   // round ring
+        vec2( sdTorus88(   pos-vec3(-0.5, 0.25, 2.0), vec2(0.20,0.05) ),43.0 ),   // squared ring
+        0.1 // smoothing parameter
+    );
+    res = opU(res, rings);
+    //res = opU( res, vec2( sdTorus82(   pos-vec3( 0.0, 0.25, 2.0), vec2(0.20,0.05) ),50.0 ) )
+	//res = opU( res, vec2( sdTorus88(   pos-vec3(-0.5, 0.25, 2.0), vec2(0.20,0.05) ),43.0 ) );
+
 	res = opU( res, vec2( sdCylinder6( pos-vec3( 1.0,0.30, 2.0), vec2(0.1,0.2) ), 12.0 ) );
 	res = opU( res, vec2( sdHexPrism(  pos-vec3(-1.0,0.20, 1.0), vec2(0.25,0.05) ),17.0 ) );
 	res = opU( res, vec2( sdPryamid4(  pos-vec3(-1.0,0.15,-2.0), vec3(0.8,0.6,0.25) ),37.0 ) );
@@ -271,6 +285,10 @@ vec2 map( in vec3 pos )
     return res;
 }
 
+//----------------------------------------------------------------------------------------------------//
+//   The rendering code
+//----------------------------------------------------------------------------------------------------//
+
 // Do the ray-march of the SDF function
 vec2 castRay( in vec3 ro, in vec3 rd )
 {
@@ -279,7 +297,7 @@ vec2 castRay( in vec3 ro, in vec3 rd )
     
     float t = tmin;
     float m = -1.0; // no material
-    for( int i=0; i < STEPS; i++ ) {
+    for( int i=0; i < MAX_STEPS; i++ ) {
 	    float precis = 0.0005*t; // precision limit
 	    vec2 res = map( ro+rd*t ); // get distance
         if( res.x<precis || t>tmax ) break; // close enough to surface, or too far from camera
@@ -413,13 +431,12 @@ void main()
     vec2 p = vec2(frag_color.x, frag_color.y / iAspect); // screen space position (from vertex shader, acts as eye ray direction)
 
     // camera	
-    //vec3 ro = vec3( -0.5+3.5*cos(0.1*time + 6.0*mo.x), 1.0 + 2.0*mo.y, 0.5 + 4.0*sin(0.1*time + 6.0*mo.x) ); // position (Rotation Origin)
     vec3 ro = iCamPosition.xyz;
-    vec3 ta = vec3( 0,0,0 ); // target
+    vec3 ta = iTargetPosition;
     // camera-to-world transformation
-    mat3 ca = setCamera( ro, ta, 0.0 );
+    mat3 ca = setCamera( ro, ta, /*rotation*/ 0.0 );
     // ray direction
-    vec3 rd = ca * normalize( vec3(p.xy, iCamPosition.w) ); // 2.0 here is the focal length. Lower = wider angle. Higher = telephoto
+    vec3 rd = ca * normalize( vec3(p.xy, iCamPosition.w) ); // `iCamPosition.w` here is the focal length. Lower = wider angle. Higher = telephoto
 
     // render -- do the minimum-distance ray march, lighting and coloring
     vec3 col = render( ro, rd );
