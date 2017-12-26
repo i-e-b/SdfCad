@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Drawing.Imaging;
+using System.Windows.Forms;
 
 namespace Tkgl
 {
@@ -79,6 +80,13 @@ namespace Tkgl
         private void slicePreviewCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
             _previewWindow.SetSlicePreview(slicePreviewCheckBox.Checked);
+        }
+
+        private void screenshotButton_Click(object sender, System.EventArgs e)
+        {
+            using (var bmp = _previewWindow.TakeScreenshot()) {
+                bmp.Save(@"C:\Temp\Screenshot.png", ImageFormat.Png);
+            }
         }
     }
 }

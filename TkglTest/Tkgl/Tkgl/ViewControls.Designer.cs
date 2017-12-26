@@ -43,6 +43,7 @@
             this.nearFieldTrack = new System.Windows.Forms.TrackBar();
             this.label5 = new System.Windows.Forms.Label();
             this.slicePreviewCheckBox = new System.Windows.Forms.CheckBox();
+            this.screenshotButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.camXZTrack)).BeginInit();
             this.cameraGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.camDistTrack)).BeginInit();
@@ -244,12 +245,23 @@
             this.slicePreviewCheckBox.UseVisualStyleBackColor = true;
             this.slicePreviewCheckBox.CheckedChanged += new System.EventHandler(this.slicePreviewCheckBox_CheckedChanged);
             // 
+            // screenshotButton
+            // 
+            this.screenshotButton.Location = new System.Drawing.Point(622, 151);
+            this.screenshotButton.Name = "screenshotButton";
+            this.screenshotButton.Size = new System.Drawing.Size(75, 23);
+            this.screenshotButton.TabIndex = 11;
+            this.screenshotButton.Text = "Screenshot";
+            this.screenshotButton.UseVisualStyleBackColor = true;
+            this.screenshotButton.Click += new System.EventHandler(this.screenshotButton_Click);
+            // 
             // ViewControls
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(715, 481);
             this.ControlBox = false;
+            this.Controls.Add(this.screenshotButton);
             this.Controls.Add(this.slicePreviewCheckBox);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.nearFieldTrack);
@@ -288,5 +300,6 @@
         private System.Windows.Forms.TrackBar nearFieldTrack;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.CheckBox slicePreviewCheckBox;
+        private System.Windows.Forms.Button screenshotButton;
     }
 }

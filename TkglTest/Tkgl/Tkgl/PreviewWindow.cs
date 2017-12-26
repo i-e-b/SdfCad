@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using OpenTK;
@@ -137,26 +138,31 @@ namespace Tkgl
             base.OnRenderFrame(e);
             cumlTime += e.Time;
 
+            CoreRender();
+
+            SwapBuffers();
+        }
+
+        private void CoreRender()
+        {
             GL.ClearColor(new Color4(0, 0, 0, 1.0f));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            
+
             GL.UseProgram(shaderId);
 
             // Shader attributes
-            float aspectRatio = 1.0f + ((Width - Height) / (float)Height);
+            float aspectRatio = 1.0f + ((Width - Height) / (float) Height);
 
             // NOTE: it is *CRITICAL* that the types on the .Net side are the same as in the shader program.
-            GL.Uniform1(1, slicePreview?1:0);   // iSliceMode
-            GL.Uniform4(2, ref Camera);         // iCamPosition
-            GL.Uniform3(3, 0.0f, 0.0f, 0.0f);   // iTargetPosition
-            GL.Uniform1(4, aspectRatio);        // iAspect
-            GL.Uniform1(5, (float)cumlTime);    // iTime
-            GL.Uniform1(6, NearDistLimit);      // iNear
+            GL.Uniform1(1, slicePreview ? 1 : 0); // iSliceMode
+            GL.Uniform4(2, ref Camera); // iCamPosition
+            GL.Uniform3(3, 0.0f, 0.0f, 0.0f); // iTargetPosition
+            GL.Uniform1(4, aspectRatio); // iAspect
+            GL.Uniform1(5, (float) cumlTime); // iTime
+            GL.Uniform1(6, NearDistLimit); // iNear
 
             // Draw commands
             screenBox.Draw();
-
-            SwapBuffers();
         }
 
         /// <summary>
@@ -222,6 +228,22 @@ namespace Tkgl
         public void SetSlicePreview(bool on)
         {
             slicePreview = on;
+        }
+
+        public Bitmap TakeScreenshot()
+        {
+            if (GraphicsContext.CurrentContext == null)
+                throw new GraphicsContextMissingException();
+            int w = this.ClientSize.Width;
+            int h = this.ClientSize.Height;
+            Bitmap bmp = new Bitmap(w, h);
+            System.Drawing.Imaging.BitmapData data =
+                bmp.LockBits(this.ClientRectangle, System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            GL.ReadPixels(0, 0, w, h, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
+            bmp.UnlockBits(data);
+
+            bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            return bmp;
         }
     }
 }
