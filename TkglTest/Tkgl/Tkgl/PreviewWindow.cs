@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Windows.Forms;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
@@ -15,6 +16,7 @@ namespace Tkgl
 
         private string CurrentModel;
 
+        // this is a very simple model to show everything is working
         private const string DefaultModel = "vec2 map( in vec3 pos ) { return opU( vec2( sdPlane(pos), 1.0 ), vec2( sdSphere(pos-vec3( 0.0,0.25, sin(iTime)*0.7), 0.25 ), 46.9 ) );}";
 
         private ScreenBox screenBox;
@@ -38,6 +40,7 @@ namespace Tkgl
         private bool useShadows;
         private bool useReflections;
         private float NearDistLimit = 0.5f;
+        private bool slicePreview = false;
 
         /// <summary>
         /// Initial set up
@@ -104,7 +107,7 @@ namespace Tkgl
 
             if (! string.IsNullOrWhiteSpace(log)) {
                 GL.DeleteProgram(program);
-                throw new Exception(log);
+                MessageBox.Show(log);
             }
 
             shaderId =  program;
@@ -143,6 +146,7 @@ namespace Tkgl
             float aspectRatio = 1.0f + ((Width - Height) / (float)Height);
 
             // NOTE: it is *CRITICAL* that the types on the .Net side are the same as in the shader program.
+            GL.Uniform1(1, slicePreview?1:0);   // iSliceMode
             GL.Uniform4(2, ref Camera);         // iCamPosition
             GL.Uniform3(3, 0.0f, 0.0f, 0.0f);   // iTargetPosition
             GL.Uniform1(4, aspectRatio);        // iAspect
@@ -213,6 +217,11 @@ namespace Tkgl
         public void SetNearLimit(float distance)
         {
             NearDistLimit = distance;
+        }
+
+        public void SetSlicePreview(bool on)
+        {
+            slicePreview = on;
         }
     }
 }

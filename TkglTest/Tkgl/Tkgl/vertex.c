@@ -1,7 +1,7 @@
 ﻿#version 440 core
 
+// this simple vertex program passes position through and colours vertexes based on position.
 layout (location = 0) in vec4 position;
-
 out vec4 frag_color;
 
 void main(void)

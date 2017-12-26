@@ -4,6 +4,7 @@
 
 in vec4 frag_color;         // this encodes screen space XY data in the range 0..1
 
+layout(location = 1) uniform int iSliceMode;       // if 1, draw a single step for slicing. Else, draw a normal visual image
 layout(location = 2) uniform vec4 iCamPosition;    // position of the view camera. `.w` is fov
 layout(location = 3) uniform vec3 iTargetPosition; // point the camera is aimed at
 layout(location = 4) uniform float iAspect;        // screen aspect ratio
@@ -239,23 +240,26 @@ vec3 warpRotX( vec3 p, float angle ) {
 //----------------------------------------------------------------------------------------------------//
 
 // Do the ray-march of the SDF function
-vec2 castRay( in vec3 ro, in vec3 rd )
+// returns (distance from camera, material ID, last step size) 
+vec3 castRay( in vec3 ro, in vec3 rd )
 {
     float tmin = iNear;  // near clip plane
     float tmax = 20.0; // far clip plane
     
     float t = tmin;
     float m = -1.0; // no material
+    vec2 res;
     for( int i=0; i < MAX_STEPS; i++ ) {
-	    float precis = 0.0005*t; // precision limit
-	    vec2 res = map( ro+rd*t ); // get distance
+	    float precis = 0.0005 * t; // precision limit - less precise further from the camera
+	    res = map( ro+rd*t ); // get distance
         if( res.x<precis || t>tmax ) break; // close enough to surface, or too far from camera
         t += res.x; // advance distance
 	    m = res.y; // set material from nearest entity.
+        if (iSliceMode == 1) break;
     }
 
     if( t>tmax ) m=-1.0; // hit no surface, reset material
-    return vec2( t, m );
+    return vec3( t, m, res.x );
 }
 
 // looks nice, but takes a lot of calculation. `k` is sharpness (higher = sharper). Set high for reflections.
@@ -300,13 +304,17 @@ float calcAO( in vec3 pos, in vec3 nor )
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
 
-// do the minimum-distance ray march, lighting and coloring
+// do the minimum-distance ray march, lighting and coloring. Returns a pixel color (no alpha)
 vec3 render( in vec3 ro, in vec3 rd )
 { 
     vec3 col = vec3(0.7, 0.9, 1.0) +rd.y*0.8; // color based on angle to give a foggy / chrome look
-    vec2 res = castRay(ro,rd); // ray march
+    vec3 res = castRay(ro,rd); // ray march
     float t = res.x; // distance
 	float m = res.y; // material
+
+    if (iSliceMode == 1) {
+        return (res.z <= 0.0) ? (vec3(0,0,0)) : (vec3(1,1,1));
+    }
 
     if( m <= -1.0 ) return col; // didn't converge on an object. Show 'sky'
 

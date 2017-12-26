@@ -30,6 +30,7 @@
         {
             this.camXZTrack = new System.Windows.Forms.TrackBar();
             this.cameraGroupBox = new System.Windows.Forms.GroupBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.camDistTrack = new System.Windows.Forms.TrackBar();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -39,9 +40,9 @@
             this.ambientOccCheckbox = new System.Windows.Forms.CheckBox();
             this.shadowCheckbox = new System.Windows.Forms.CheckBox();
             this.reflectionsCheckbox = new System.Windows.Forms.CheckBox();
-            this.label4 = new System.Windows.Forms.Label();
             this.nearFieldTrack = new System.Windows.Forms.TrackBar();
             this.label5 = new System.Windows.Forms.Label();
+            this.slicePreviewCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.camXZTrack)).BeginInit();
             this.cameraGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.camDistTrack)).BeginInit();
@@ -83,6 +84,16 @@
             this.cameraGroupBox.TabIndex = 1;
             this.cameraGroupBox.TabStop = false;
             this.cameraGroupBox.Text = "Camera";
+            // 
+            // label4
+            // 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(618, 109);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(67, 13);
+            this.label4.TabIndex = 7;
+            this.label4.Text = "Field of View";
             // 
             // camDistTrack
             // 
@@ -196,16 +207,6 @@
             this.reflectionsCheckbox.UseVisualStyleBackColor = true;
             this.reflectionsCheckbox.CheckedChanged += new System.EventHandler(this.reflectionsCheckbox_CheckedChanged);
             // 
-            // label4
-            // 
-            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(618, 109);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(67, 13);
-            this.label4.TabIndex = 7;
-            this.label4.Text = "Field of View";
-            // 
             // nearFieldTrack
             // 
             this.nearFieldTrack.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -232,12 +233,24 @@
             this.label5.TabIndex = 8;
             this.label5.Text = "Slice start";
             // 
+            // slicePreviewCheckBox
+            // 
+            this.slicePreviewCheckBox.AutoSize = true;
+            this.slicePreviewCheckBox.Location = new System.Drawing.Point(12, 174);
+            this.slicePreviewCheckBox.Name = "slicePreviewCheckBox";
+            this.slicePreviewCheckBox.Size = new System.Drawing.Size(90, 17);
+            this.slicePreviewCheckBox.TabIndex = 10;
+            this.slicePreviewCheckBox.Text = "Slice Preview";
+            this.slicePreviewCheckBox.UseVisualStyleBackColor = true;
+            this.slicePreviewCheckBox.CheckedChanged += new System.EventHandler(this.slicePreviewCheckBox_CheckedChanged);
+            // 
             // ViewControls
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(715, 481);
             this.ControlBox = false;
+            this.Controls.Add(this.slicePreviewCheckBox);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.nearFieldTrack);
             this.Controls.Add(this.reflectionsCheckbox);
@@ -274,5 +287,6 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TrackBar nearFieldTrack;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.CheckBox slicePreviewCheckBox;
     }
 }

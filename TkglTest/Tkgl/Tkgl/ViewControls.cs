@@ -75,5 +75,10 @@ namespace Tkgl
             var near = 0.5f + (nearFieldTrack.Value / 200.0f); // 0.5..5.5;
             _previewWindow.SetNearLimit(near);
         }
+
+        private void slicePreviewCheckBox_CheckedChanged(object sender, System.EventArgs e)
+        {
+            _previewWindow.SetSlicePreview(slicePreviewCheckBox.Checked);
+        }
     }
 }
