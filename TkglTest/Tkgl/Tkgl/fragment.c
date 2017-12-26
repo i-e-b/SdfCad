@@ -312,14 +312,15 @@ vec3 render( in vec3 ro, in vec3 rd )
     float t = res.x; // distance
 	float m = res.y; // material
 
+    vec3 pos = ro + t*rd;
+    vec3 nor = calcNormal( pos );
+
     if (iSliceMode == 1) {
-        return (res.z <= 0.0) ? (vec3(0,0,0)) : (vec3(1,1,1));
+        return (res.z <= 0.0) ? (nor) : (vec3(1,1,1)); // white for empty space, vector-toward-surface for occupied space
     }
 
     if( m <= -1.0 ) return col; // didn't converge on an object. Show 'sky'
 
-    vec3 pos = ro + t*rd;
-    vec3 nor = calcNormal( pos );
     
     // material (make up a color based on position)
     col = 0.45 + 0.35*sin( vec3(0.05,0.08,0.10)*(m-1.0) ); // color based on 'material' returned from `map`
@@ -399,8 +400,14 @@ void main()
     // render -- do the minimum-distance ray march, lighting and coloring
     vec3 col = render( ro, rd );
 
-    // gamma -- correct colors
-    col = pow( col, vec3(0.4545) );
+    if (iSliceMode != 1) {
+        // gamma -- correct colors
+        col = pow( col, vec3(0.4545) );
+    } else {
+        // encode surface normal in slice data. Only the surface-most pixels have valid surface normals
+        col += vec3(1,1,1);
+        col /= 2;
+    }
 
     fragColor = vec4( col, 1.0 );
 }
