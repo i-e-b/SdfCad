@@ -1,10 +1,10 @@
 ﻿#version 440 core
 
 // This shader is adapted from https://www.shadertoy.com/view/Xds3zN by Inigo Quilez
+// more detailed rendering examples at http://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm
 
 in vec4 frag_color;         // this encodes screen space XY data in the range 0..1
 
-layout(location = 1) uniform int iSliceMode;       // if 1, draw a single step for slicing. Else, draw a normal visual image
 layout(location = 2) uniform vec4 iCamPosition;    // position of the view camera. `.w` is fov
 layout(location = 3) uniform vec3 iTargetPosition; // point the camera is aimed at
 layout(location = 4) uniform float iAspect;        // screen aspect ratio
@@ -15,6 +15,9 @@ out vec4 fragColor;         // final pixel output color
 
 // Note for Shadertoy conversion: `fragCoord` should be replaced with `gl_FragCoord.xy`
 // The rendering code is down at the bottom
+
+// Set to 1 to turn off perspective and view from overhead
+#define SLICE_MODE 0
 
 // Ambient occlusion shading
 #define AMB_OCC 1
@@ -231,7 +234,7 @@ vec3 warpRotX( vec3 p, float angle ) {
 //   The SDF map -- this is the model to be rendered
 //   This is generated externally and fed in.
 //----------------------------------------------------------------------------------------------------//
-
+#line 1
 #define MAP_FUNCTION_INJECTED_HERE
 
 
@@ -249,13 +252,16 @@ vec3 castRay( in vec3 ro, in vec3 rd )
     float t = tmin;
     float m = -1.0; // no material
     vec2 res;
+    #if SLICE_MODE
+    for (int i=0; i<1; i++) {
+    #else
     for( int i=0; i < MAX_STEPS; i++ ) {
+    #endif
 	    float precis = 0.0005 * t; // precision limit - less precise further from the camera
 	    res = map( ro+rd*t ); // get distance
         if( res.x<precis || t>tmax ) break; // close enough to surface, or too far from camera
         t += res.x; // advance distance
 	    m = res.y; // set material from nearest entity.
-        if (iSliceMode == 1) break;
     }
 
     if( t>tmax ) m=-1.0; // hit no surface, reset material
@@ -315,9 +321,9 @@ vec3 render( in vec3 ro, in vec3 rd )
     vec3 pos = ro + t*rd;
     vec3 nor = calcNormal( pos );
 
-    if (iSliceMode == 1) {
+    #if SLICE_MODE
         return (res.z <= 0.0) ? (nor) : (vec3(1,1,1)); // white for empty space, vector-toward-surface for occupied space
-    }
+    #endif
 
     if( m <= -1.0 ) return col; // didn't converge on an object. Show 'sky'
 
@@ -325,18 +331,16 @@ vec3 render( in vec3 ro, in vec3 rd )
     // material (make up a color based on position)
     col = 0.45 + 0.35*sin( vec3(0.05,0.08,0.10)*(m-1.0) ); // color based on 'material' returned from `map`
     //col = nor; // color based on normal. Works nicely for CAD purposes.
-    if( m <= 1.0 ) // floor level, do a checker board. Remove if objects can be directly colored
-    {
-        
+    if( m <= 1.0 ) { // plane object, do a checker board. Remove if objects can be directly colored
         float f = mod( floor(5.0*pos.z) + floor(5.0*pos.x), 2.0);
         col = 0.3 + 0.1*f*vec3(1.0);
     }
 
     // lighting
     #if AMB_OCC
-    float occ = calcAO( pos, nor ); // Ambient occlusion
+        float occ = calcAO( pos, nor ); // Ambient occlusion
     #else
-    float occ = 1.0;
+        float occ = 1.0;
     #endif
     vec3  lig = normalize( vec3(-0.4, 0.7, -0.6) );
     vec3  hal = normalize( lig-rd );
@@ -347,12 +351,12 @@ vec3 render( in vec3 ro, in vec3 rd )
     float dom = 1.0;
     
     #if SHADOWS
-    dif *= softshadow( pos, lig, 0.02, 2.5, /* hardness */ 2.0 );
+        dif *= softshadow( pos, lig, 0.02, 2.5, /* hardness */ 2.0 );
     #endif
     #if REFLECTIONS
-    vec3 ref = reflect( rd, nor );
-    dom = smoothstep( -0.1, 0.1, ref.y );
-    dom *= softshadow( pos, ref, 0.02, 2.5, /* hardness */ 32.0 );
+        vec3 ref = reflect( rd, nor );
+        dom = smoothstep( -0.1, 0.1, ref.y );
+        dom *= softshadow( pos, ref, 0.02, 2.5, /* hardness */ 32.0 );
     #endif
 
     // Shine
@@ -389,25 +393,34 @@ void main()
 {
     vec2 p = vec2(frag_color.x, frag_color.y / iAspect); // screen space position (from vertex shader, acts as eye ray direction)
 
-    // camera	
-    vec3 ro = iCamPosition.xyz;
-    vec3 ta = iTargetPosition;
-    // camera-to-world transformation
-    mat3 ca = setCamera( ro, ta, /*rotation*/ 0.0 );
-    // ray direction
-    vec3 rd = ca * normalize( vec3(p.xy, iCamPosition.w) ); // `iCamPosition.w` here is the focal length. Lower = wider angle. Higher = telephoto
+    #if SLICE_MODE
+        // for slicing, we project each ray in the same direction, so no perspective.
+        vec3 buildArea = vec3(4,4,3); // TODO: this should be passed in
+        vec3 ro = vec3(p.x * buildArea.x, /*slice layer: iNear */ buildArea.z, p.y * buildArea.y); // STL orientation is different
+        vec3 rd = vec3(0,-1,0); // look down
+    #else
+        // camera	
+        vec3 ro = iCamPosition.xyz;
+        vec3 ta = iTargetPosition;
+        // camera-to-world transformation
+        mat3 ca = setCamera( ro, ta, /*rotation*/ 0.0 );
+        // ray direction
+        vec3 rd = ca * normalize( vec3(p.xy, iCamPosition.w) ); // `iCamPosition.w` here is the focal length. Lower = wider angle. Higher = telephoto
+    #endif
+
+
 
     // render -- do the minimum-distance ray march, lighting and coloring
     vec3 col = render( ro, rd );
 
-    if (iSliceMode != 1) {
-        // gamma -- correct colors
-        col = pow( col, vec3(0.4545) );
-    } else {
+    #if SLICE_MODE
         // encode surface normal in slice data. Only the surface-most pixels have valid surface normals
         col += vec3(1,1,1);
         col /= 2;
-    }
+    #else
+        // gamma -- correct colors
+        col = pow( col, vec3(0.4545) );
+    #endif
 
     fragColor = vec4( col, 1.0 );
 }

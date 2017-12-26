@@ -76,6 +76,9 @@ namespace Tkgl
             var fragSource = File.ReadAllText(@"fragment.c");
 
             // TODO: clean all this up!
+            if (slicePreview) {
+                fragSource = fragSource.Replace("#define SLICE_MODE 0", "#define SLICE_MODE 1");
+            }
             if ( ! useAmbientOcclusion) {
                 fragSource = fragSource.Replace("#define AMB_OCC 1", "#define AMB_OCC 0");
             }

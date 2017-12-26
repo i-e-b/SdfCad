@@ -29,6 +29,7 @@ namespace Tkgl
 
         private void RebindShaderOptions()
         {
+            _previewWindow.SetSlicePreview(slicePreviewCheckBox.Checked);
             _previewWindow.RebindShader(ambientOccCheckbox.Checked, shadowCheckbox.Checked, reflectionsCheckbox.Checked);
         }
 
@@ -79,7 +80,7 @@ namespace Tkgl
 
         private void slicePreviewCheckBox_CheckedChanged(object sender, System.EventArgs e)
         {
-            _previewWindow.SetSlicePreview(slicePreviewCheckBox.Checked);
+            RebindShaderOptions();
         }
 
         private void screenshotButton_Click(object sender, System.EventArgs e)
