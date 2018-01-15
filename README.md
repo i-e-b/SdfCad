@@ -19,9 +19,10 @@ Articles:
 
 https://www.codeproject.com/Articles/1167212/OpenGL-with-OpenTK-in-Csharp-Part-Initialize-the-G
 
-Similar project:
+Similar projects:
 
 https://github.com/movAX13h/Zwerg
+https://libfive.com/studio/
 
 STL Files:
 
