@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2003
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tkgl", "Tkgl\Tkgl.csproj", "{8ED2627B-A722-4C69-A43A-9C7B8D7FF601}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SliceToObject", "SliceToObject\SliceToObject.csproj", "{37F352A8-EC2B-44B3-85DC-94398A21122C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{8ED2627B-A722-4C69-A43A-9C7B8D7FF601}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8ED2627B-A722-4C69-A43A-9C7B8D7FF601}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8ED2627B-A722-4C69-A43A-9C7B8D7FF601}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37F352A8-EC2B-44B3-85DC-94398A21122C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37F352A8-EC2B-44B3-85DC-94398A21122C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37F352A8-EC2B-44B3-85DC-94398A21122C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37F352A8-EC2B-44B3-85DC-94398A21122C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

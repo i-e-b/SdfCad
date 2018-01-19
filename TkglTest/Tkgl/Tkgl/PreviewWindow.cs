@@ -237,8 +237,8 @@ namespace Tkgl
         {
             if (GraphicsContext.CurrentContext == null)
                 throw new GraphicsContextMissingException();
-            int w = this.ClientSize.Width;
-            int h = this.ClientSize.Height;
+            int w = ClientSize.Width;
+            int h = ClientSize.Height;
             Bitmap bmp = new Bitmap(w, h);
             System.Drawing.Imaging.BitmapData data =
                 bmp.LockBits(this.ClientRectangle, System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
